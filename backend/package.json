@@ -1,0 +1,19 @@
+{
+  "name": "arvyax-journal-backend",
+  "version": "1.0.0",
+  "description": "AI-Assisted Journal System — Backend API",
+  "main": "api/index.js",
+  "scripts": {
+    "dev": "node api/index.js",
+    "start": "node api/index.js",
+    "db:init": "node src/db-init.js"
+  },
+  "dependencies": {
+    "groq-sdk": "^0.8.0",
+    "cors": "^2.8.5",
+    "dotenv": "^16.4.7",
+    "express": "^4.21.1",
+    "express-rate-limit": "^7.4.1",
+    "mysql2": "^3.11.5"
+  }
+}
