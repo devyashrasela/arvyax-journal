@@ -4,11 +4,21 @@ const path = require("path");
 
 let sslConfig = undefined;
 
-// Load the Aiven CA certificate if it exists in the certs directory
+// Load the Aiven CA certificate if it exists locally
 const caPath = path.join(__dirname, "..", "certs", "ca.pem");
 if (fs.existsSync(caPath)) {
   sslConfig = {
     ca: fs.readFileSync(caPath, "utf-8"),
+  };
+} else if (process.env.CA_CERT) {
+  // On Vercel, read from environment variable instead of file
+  sslConfig = {
+    ca: process.env.CA_CERT,
+  };
+} else {
+  // Fallback: allow connection without strict CA verification
+  sslConfig = {
+    rejectUnauthorized: false,
   };
 }
 
@@ -16,7 +26,7 @@ const pool = mysql.createPool({
   uri: process.env.DATABASE_URL,
   ssl: sslConfig,
   waitForConnections: true,
-  connectionLimit: 10,
+  connectionLimit: 5,
   queueLimit: 0,
 });
 

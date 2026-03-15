@@ -1,4 +1,5 @@
-require("dotenv").config();
+const path = require("path");
+require("dotenv").config({ path: path.join(__dirname, "..", ".env") });
 
 const express = require("express");
 const cors = require("cors");
@@ -30,6 +31,21 @@ app.use(
 app.use(express.json({ limit: "1mb" }));
 app.use(apiLimiter);
 
+// -- Database initialization (runs once on first request) --
+
+let dbInitialized = false;
+app.use(async (req, res, next) => {
+  if (!dbInitialized) {
+    try {
+      await initDB();
+      dbInitialized = true;
+    } catch (err) {
+      console.error("Database init failed:", err);
+    }
+  }
+  next();
+});
+
 // -- Routes --
 
 app.get("/api/health", (req, res) => {
@@ -54,20 +70,10 @@ app.use((err, req, res, next) => {
 const PORT = process.env.PORT || 3001;
 
 if (process.env.VERCEL) {
-  // Running on Vercel as a serverless function
   module.exports = app;
 } else {
-  // Local development — listen on a port
-  initDB()
-    .then(() => {
-      app.listen(PORT, () => {
-        console.log(`Journal API running on http://localhost:${PORT}`);
-      });
-    })
-    .catch((err) => {
-      console.error("Failed to initialize database:", err);
-      process.exit(1);
-    });
-
+  app.listen(PORT, () => {
+    console.log(`Journal API running on http://localhost:${PORT}`);
+  });
   module.exports = app;
 }

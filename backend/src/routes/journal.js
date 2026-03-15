@@ -48,29 +48,8 @@ router.post("/", async (req, res) => {
 });
 
 // ─────────────────────────────────────────────
-// GET /api/journal/:userId — Get all entries
-// ─────────────────────────────────────────────
-router.get("/:userId", async (req, res) => {
-  try {
-    const { userId } = req.params;
-
-    const [rows] = await pool.execute(
-      `SELECT id, user_id, ambience, text, emotion, keywords, summary, created_at
-       FROM journal_entries
-       WHERE user_id = ?
-       ORDER BY created_at DESC`,
-      [userId]
-    );
-
-    res.json({ entries: rows });
-  } catch (err) {
-    console.error("GET /api/journal/:userId error:", err);
-    res.status(500).json({ error: "Internal server error" });
-  }
-});
-
-// ─────────────────────────────────────────────
 // POST /api/journal/analyze — LLM emotion analysis
+// (Must be defined BEFORE /:userId to avoid being swallowed)
 // ─────────────────────────────────────────────
 router.post("/analyze", analyzeLimiter, async (req, res) => {
   try {
@@ -117,6 +96,7 @@ router.post("/analyze", analyzeLimiter, async (req, res) => {
 
 // ─────────────────────────────────────────────
 // GET /api/journal/insights/:userId — Aggregated insights
+// (Must be defined BEFORE /:userId to avoid being swallowed)
 // ─────────────────────────────────────────────
 router.get("/insights/:userId", async (req, res) => {
   try {
@@ -189,6 +169,29 @@ router.get("/insights/:userId", async (req, res) => {
     });
   } catch (err) {
     console.error("GET /api/journal/insights/:userId error:", err);
+    res.status(500).json({ error: "Internal server error" });
+  }
+});
+
+// ─────────────────────────────────────────────
+// GET /api/journal/:userId — Get all entries
+// (Defined LAST because :userId is a catch-all param)
+// ─────────────────────────────────────────────
+router.get("/:userId", async (req, res) => {
+  try {
+    const { userId } = req.params;
+
+    const [rows] = await pool.execute(
+      `SELECT id, user_id, ambience, text, emotion, keywords, summary, created_at
+       FROM journal_entries
+       WHERE user_id = ?
+       ORDER BY created_at DESC`,
+      [userId]
+    );
+
+    res.json({ entries: rows });
+  } catch (err) {
+    console.error("GET /api/journal/:userId error:", err);
     res.status(500).json({ error: "Internal server error" });
   }
 });
